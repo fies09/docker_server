@@ -13,6 +13,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
+      - ./backup:/backup 
     networks:
       - app-network
     restart: always  # 添加自动重启策略

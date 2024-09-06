@@ -5,9 +5,11 @@
 3, 查看已启动的服务： docker ps -a
 4, 访问服务： [访问地址](http://localhost:8080)
 5, 访问mysql服务： [http://localhost:8080/mysql](http://localhost:8080/mysql)
-6, 停止服务： docker-compose down
-7，重启服务： docker-compose restart / 重新启动并应用更改： docker-compose up -d --force-recreate
-8，备份服务： docker-compose backup
-9，恢复服务： docker-compose restore
-10，删除服务： docker-compose rm
-11，删除服务并删除数据： docker-compose rm -f
+6, 以下实现 mysql凌晨 1 点定期备份
+docker exec -it mysql-container bash
+apt-get update && apt-get install cron
+crontab -e
+0 1 * * * /path/to/mysql_backup.sh
+7, 以下实现每周一凌晨 3 点备份所有 Docker 镜像
+crontab -e
+0 3 * * 1 /Users/fanyong/Desktop/code/docker_server/docker_backup.sh
