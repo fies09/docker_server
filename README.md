@@ -13,3 +13,5 @@ crontab -e
 7, 以下实现每周一凌晨 3 点备份所有 Docker 镜像
 crontab -e
 0 3 * * 1 /Users/fanyong/Desktop/code/docker_server/docker_backup.sh
+
+.env配置文件信息

@@ -3,22 +3,22 @@ version: '3'
 services:
   mysql:
     image: mysql:latest
-    container_name: mysql-container
+    container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE} 
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     ports:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./backup:/backup 
+      - ./backup:/backup
     networks:
       - app-network
     restart: always  # 添加自动重启策略
 
   nginx:
     image: nginx:latest
-    container_name: nginx-container
+    container_name: nginx
     ports:
       - "8080:80"
     volumes:
@@ -27,8 +27,53 @@ services:
       - app-network
     restart: always  # 添加自动重启策略
 
+  redis:
+    image: redis:latest
+    container_name: redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}  # 设置 Redis 密码
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf  # 挂载配置文件
+      - redis-data:/data
+    networks:
+      - app-network
+    restart: always  # 添加自动重启策略
+
+  postgresql:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    restart: always  # 添加自动重启策略
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"  # RabbitMQ 端口
+      - "15672:15672"  # RabbitMQ 管理界面端口
+    networks:
+      - app-network
+    restart: always  # 添加自动重启策略
+
 volumes:
   mysql-data:
+  redis-data:
+  postgres-data:
 
 networks:
   app-network:
