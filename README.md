@@ -15,3 +15,11 @@ crontab -e
 0 3 * * 1 /Users/fanyong/Desktop/code/docker_server/docker_backup.sh
 
 .env配置文件信息
+MYSQL_PASSWORD="root"
+MYSQL_DATABASE="mysql"
+POSTGRES_USER="root"
+POSTGRES_PASSWORD="root"
+POSTGRES_DB="postgres"
+RABBITMQ_USER="root"
+RABBITMQ_PASSWORD="root"
+REDIS_PASSWORD="root"
