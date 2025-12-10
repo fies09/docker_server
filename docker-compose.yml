@@ -1,18 +1,4 @@
 services:
-  mysql:
-    image: mysql:latest
-    container_name: mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql-data:/var/lib/mysql
-      - ./backup:/backup
-    networks:
-      - app-network
-    restart: always  # 添加自动重启策略
 
   nginx:
     image: nginx:latest
@@ -55,21 +41,7 @@ services:
       - app-network
     restart: always  # 添加自动重启策略
 
-  rabbitmq:
-    image: rabbitmq:management
-    container_name: rabbitmq
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
-    ports:
-      - "5672:5672"  # RabbitMQ 端口
-      - "15672:15672"  # RabbitMQ 管理界面端口
-    networks:
-      - app-network
-    restart: always  # 添加自动重启策略
-
 volumes:
-  mysql-data:
   redis-data:
   postgres-data:
 

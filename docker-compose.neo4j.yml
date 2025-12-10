@@ -1,6 +1,6 @@
 services:
   neo4j:
-    image: crpi-srv542vpdq3agniz.cn-chengdu.personal.cr.aliyuncs.com/personal_ai_dev/neo4j-custom:amd64
+    image: neo4j:5.15.0
     container_name: neo4j
     environment:
       NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD}

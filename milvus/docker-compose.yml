@@ -48,7 +48,6 @@ services:
       MQ_TYPE: woodpecker
     volumes:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/milvus:/var/lib/milvus
-      - ${DOCKER_VOLUME_DIRECTORY:-.}/user.yaml:/milvus/configs/user.yaml
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
       interval: 30s
