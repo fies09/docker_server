@@ -1,0 +1,19 @@
+--2025-09-11 14:49:27--  https://github.com/milvus-io/milvus/releases/download/v2.6.0/milvus-standalone-docker-compose.yml
+Resolving github.com (github.com)... 20.205.243.166
+Connecting to github.com (github.com)|20.205.243.166|:443... connected.
+HTTP request sent, awaiting response... 302 Found
+Location: https://release-assets.githubusercontent.com/github-production-release-asset/208728772/fb20162d-c9b3-43c0-ae2b-a9704265272f?sp=r&sv=2018-11-09&sr=b&spr=https&se=2025-09-11T07%3A23%3A13Z&rscd=attachment%3B+filename%3Dmilvus-standalone-docker-compose.yml&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2025-09-11T06%3A22%3A48Z&ske=2025-09-11T07%3A23%3A13Z&sks=b&skv=2018-11-09&sig=wnq%2FJ3ztr1mHA%2BZkLhlehTB7E4oE3wc0eCkQCX5AjLA%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc1NzU3MzY2NywibmJmIjoxNzU3NTczMzY3LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.hQTDMiaOZdpC0eevHNwkWV2rg_7bSRZDxlXNDc56D6o&response-content-disposition=attachment%3B%20filename%3Dmilvus-standalone-docker-compose.yml&response-content-type=application%2Foctet-stream [following]
+--2025-09-11 14:49:28--  https://release-assets.githubusercontent.com/github-production-release-asset/208728772/fb20162d-c9b3-43c0-ae2b-a9704265272f?sp=r&sv=2018-11-09&sr=b&spr=https&se=2025-09-11T07%3A23%3A13Z&rscd=attachment%3B+filename%3Dmilvus-standalone-docker-compose.yml&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2025-09-11T06%3A22%3A48Z&ske=2025-09-11T07%3A23%3A13Z&sks=b&skv=2018-11-09&sig=wnq%2FJ3ztr1mHA%2BZkLhlehTB7E4oE3wc0eCkQCX5AjLA%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc1NzU3MzY2NywibmJmIjoxNzU3NTczMzY3LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.hQTDMiaOZdpC0eevHNwkWV2rg_7bSRZDxlXNDc56D6o&response-content-disposition=attachment%3B%20filename%3Dmilvus-standalone-docker-compose.yml&response-content-type=application%2Foctet-stream
+Resolving release-assets.githubusercontent.com (release-assets.githubusercontent.com)... 185.199.109.133, 185.199.108.133, 185.199.111.133, ...
+Connecting to release-assets.githubusercontent.com (release-assets.githubusercontent.com)|185.199.109.133|:443... failed: Connection timed out.
+Connecting to release-assets.githubusercontent.com (release-assets.githubusercontent.com)|185.199.108.133|:443... failed: Connection timed out.
+Connecting to release-assets.githubusercontent.com (release-assets.githubusercontent.com)|185.199.111.133|:443... failed: Connection timed out.
+Connecting to release-assets.githubusercontent.com (release-assets.githubusercontent.com)|185.199.110.133|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 1788 (1.7K) [application/octet-stream]
+Saving to: ‘docker-compose.yml’
+
+     0K .                                                     100% 26.5M=0s
+
+2025-09-11 14:56:13 (26.5 MB/s) - ‘docker-compose.yml’ saved [1788/1788]
+

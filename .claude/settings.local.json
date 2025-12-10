@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/fanyong/.docker/**)",
+      "Bash(docker info:*)",
+      "Bash(docker pull:*)",
+      "Bash(docker-compose:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker inspect:*)",
+      "Bash(chmod:*)",
+      "Bash(curl:*)",
+      "Bash(docker exec:*)",
+      "Bash(./test-services.sh)",
+      "Bash(cat:*)",
+      "Bash(./start-service.sh:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
