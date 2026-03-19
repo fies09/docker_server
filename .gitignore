@@ -1,0 +1,25 @@
+# System
+.DS_Store
+**/.DS_Store
+
+# Environment files with secrets
+.env
+.env.kb
+
+# Data volumes
+volumes/
+neo4j_export/
+数据库数据备份/
+
+# Backup data files
+backup/**/*.db.strings
+backup/**/*.db.*
+backup/**/data/
+
+# Neo4j binary data
+**/*.db
+**/*.db.*
+**/neostore.*
+
+# MinIO data
+**/.minio.sys/
