@@ -12,7 +12,9 @@
       "Bash(docker exec:*)",
       "Bash(./test-services.sh)",
       "Bash(cat:*)",
-      "Bash(./start-service.sh:*)"
+      "Bash(./start-service.sh:*)",
+      "Read(//Users/fanyong/Desktop/data/sql_data/**)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

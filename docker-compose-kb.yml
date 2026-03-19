@@ -1,0 +1,131 @@
+services:
+  kb-redis:
+    image: redis:7.2
+    container_name: kb-redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - "${KB_REDIS_PORT:-7379}:6379"
+    environment:
+      - REDIS_PASSWORD=${KB_REDIS_PASSWORD}
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - kb-redis-data:/data
+    networks:
+      - kb-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  kb-postgresql:
+    image: postgres:${KB_POSTGRES_VERSION:-latest}
+    container_name: kb-postgres
+    environment:
+      POSTGRES_USER: ${KB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${KB_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${KB_POSTGRES_DB}
+    ports:
+      - "${KB_POSTGRES_PORT:-6432}:5432"
+    volumes:
+      - kb-postgres-data:/var/lib/postgresql
+    networks:
+      - kb-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KB_POSTGRES_USER}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  kb-etcd:
+    container_name: kb-etcd
+    image: quay.io/coreos/etcd:${KB_ETCD_VERSION:-v3.5.18}
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - ${KB_DOCKER_VOLUME_DIRECTORY:-.}/volumes/kb-etcd:/etcd
+    command: etcd -advertise-client-urls=http://kb-etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    networks:
+      - kb-network
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  kb-minio:
+    container_name: kb-minio
+    image: minio/minio:${KB_MINIO_VERSION:-RELEASE.2024-12-18T13-15-44Z}
+    environment:
+      MINIO_ACCESS_KEY: ${KB_MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${KB_MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "${KB_MINIO_CONSOLE_PORT:-10001}:9001"
+      - "${KB_MINIO_API_PORT:-10000}:9000"
+    volumes:
+      - ${KB_DOCKER_VOLUME_DIRECTORY:-.}/volumes/kb-minio:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+    networks:
+      - kb-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  kb-milvus:
+    container_name: kb-milvus
+    image: milvusdb/milvus:${KB_MILVUS_VERSION:-v2.6.1}
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      ETCD_ENDPOINTS: kb-etcd:2379
+      MINIO_ADDRESS: kb-minio:9000
+      MQ_TYPE: woodpecker
+    volumes:
+      - ${KB_DOCKER_VOLUME_DIRECTORY:-.}/volumes/kb-milvus:/var/lib/milvus
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+    ports:
+      - "${KB_MILVUS_PORT:-20530}:19530"
+      - "${KB_MILVUS_METRICS_PORT:-10091}:9091"
+    networks:
+      - kb-network
+    depends_on:
+      - kb-etcd
+      - kb-minio
+
+volumes:
+  kb-redis-data:
+  kb-postgres-data:
+
+networks:
+  kb-network:
+    driver: bridge
