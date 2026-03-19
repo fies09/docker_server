@@ -10,6 +10,7 @@
 volumes/
 neo4j_export/
 数据库数据备份/
+milvus/volumes/
 
 # Backup data files
 backup/**/*.db.strings
