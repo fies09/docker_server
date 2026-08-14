@@ -1,0 +1,112 @@
+module.exports = {
+  apps: [
+    {
+      name: 'personal-ai-backend',
+      script: './.venv/bin/python',
+      args: '-c "import sys; sys.path.append(\'.\'); from app.main import app; import uvicorn; uvicorn.run(app, host=\'0.0.0.0\', port=8000, workers=1)"',
+      cwd: '.',
+      instances: 1,
+      autorestart: true,
+      watch: true,
+      watch_delay: 2000,
+      restart_delay: 1000,
+      max_restarts: 10,
+      min_uptime: '10s',
+      ignore_watch: [
+        'node_modules',
+        'logs',
+        'logs/*',
+        'logs/**/*',
+        '.git',
+        '.git/*',
+        '*.log',
+        '**/*.log',
+        '__pycache__',
+        '__pycache__/*',
+        '.pytest_cache',
+        '.pytest_cache/*',
+        'frontend/node_modules',
+        'frontend/node_modules/*',
+        'frontend/.next',
+        'frontend/.next/*',
+        'frontend/out',
+        'frontend/out/*',
+        'uploads',
+        'uploads/*',
+        'assets',
+        'assets/*',
+        '.env',
+        '*.pid',
+        '*.tmp',
+        '.DS_Store',
+        'Thumbs.db'
+      ],
+      max_memory_restart: '1G',
+      env: {
+        PYTHONPATH: '.',
+        ENVIRONMENT: 'production'
+      },
+      env_development: {
+        PYTHONPATH: '.',
+        ENVIRONMENT: 'development',
+        DEBUG: 'True',
+        LOG_LEVEL: 'DEBUG'
+      },
+      error_file: './logs/backend-error.log',
+      out_file: './logs/backend-out.log',
+      log_file: './logs/backend.log',
+      time: true
+    },
+    {
+      name: 'personal-ai-frontend',
+      script: 'npm',
+      args: 'start',
+      cwd: './frontend',
+      instances: 1,
+      autorestart: true,
+      watch: true,
+      watch_delay: 2000,
+      restart_delay: 1000,
+      max_restarts: 10,
+      min_uptime: '10s',
+      ignore_watch: [
+        'node_modules',
+        'node_modules/*',
+        '.next',
+        '.next/*',
+        'out',
+        'out/*',
+        '.git',
+        '.git/*',
+        '*.log',
+        '**/*.log',
+        'logs',
+        'logs/*',
+        '../logs',
+        '../logs/*',
+        '.env',
+        '*.pid',
+        '*.tmp',
+        '.DS_Store',
+        'Thumbs.db'
+      ],
+      max_memory_restart: '512M',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3000,
+        HOSTNAME: '0.0.0.0',
+        NEXT_PUBLIC_API_URL: 'http://localhost:8000'
+      },
+      env_development: {
+        NODE_ENV: 'development',
+        PORT: 3000,
+        HOSTNAME: '0.0.0.0',
+        NEXT_PUBLIC_API_URL: 'http://localhost:8000'
+      },
+      error_file: './logs/frontend-error.log',
+      out_file: './logs/frontend-out.log',
+      log_file: './logs/frontend.log',
+      time: true
+    }
+  ]
+}

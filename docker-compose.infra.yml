@@ -1,0 +1,266 @@
+# ============================================
+# 统一基础设施服务配置
+# 路径: /Users/fanyong/Desktop/code/python/docker_server/docker-compose.infra.yml
+#
+# 涵盖项目:
+#   - personal_ai (原 kb-* 服务)
+#   - my_assistant
+#   - 其他项目共享使用
+#
+# 包含服务:
+#   - Redis (缓存)
+#   - PostgreSQL + pgvector (向量数据库)
+#   - Milvus (向量数据库) + etcd + minio
+#   - Neo4j (图数据库)
+#   - Ollama (本地大模型)
+# ============================================
+
+name: infra
+
+services:
+  # ----------------------------------------
+  # Redis 缓存服务
+  # ----------------------------------------
+  redis:
+    image: redis:7.2-alpine
+    platform: linux/arm64
+    container_name: infra-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis123} --appendonly yes --appendfsync everysec --maxmemory 512mb --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis123}
+    volumes:
+      - redis-data:/data
+    networks:
+      - infra-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD:-redis123}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ----------------------------------------
+  # PostgreSQL + pgvector
+  # ----------------------------------------
+  postgres:
+    image: pgvector/pgvector:pg16
+    platform: linux/arm64
+    container_name: infra-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - infra-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ----------------------------------------
+  # Milvus 依赖: etcd
+  # ----------------------------------------
+  etcd:
+    container_name: infra-etcd
+    image: quay.io/coreos/etcd:${ETCD_VERSION:-v3.5.18}
+    platform: linux/arm64
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - etcd-data:/etcd
+    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    networks:
+      - infra-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ----------------------------------------
+  # Milvus 依赖: minio
+  # ----------------------------------------
+  minio:
+    container_name: infra-minio
+    image: minio/minio:${MINIO_VERSION:-RELEASE.2024-12-18T13-15-44Z}
+    platform: linux/arm64
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+      - "${MINIO_API_PORT:-9000}:9000"
+    volumes:
+      - minio-data:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+    networks:
+      - infra-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ----------------------------------------
+  # Milvus 向量数据库
+  # ----------------------------------------
+  milvus:
+    container_name: infra-milvus
+    image: milvusdb/milvus:${MILVUS_VERSION:-v2.6.1}
+    platform: linux/arm64
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+      MINIO_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MQ_TYPE: woodpecker
+    volumes:
+      - milvus-data:/var/lib/milvus
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 6G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+    ports:
+      - "${MILVUS_PORT:-19530}:19530"
+      - "${MILVUS_METRICS_PORT:-9091}:9091"
+    networks:
+      - infra-network
+    depends_on:
+      - etcd
+      - minio
+
+  # ----------------------------------------
+  # Neo4j 图数据库
+  # ----------------------------------------
+  neo4j:
+    container_name: infra-neo4j
+    image: neo4j:${NEO4J_VERSION:-5.26.0}
+    platform: linux/arm64
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-neo4j123}
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 2G
+      NEO4J_server_memory_pagecache_size: 1G
+      NEO4J_dbms_security_procedures_unrestricted: apoc.*
+      NEO4J_dbms_security_procedures_allowlist: apoc.*
+    ports:
+      - "${NEO4J_HTTP_PORT:-7474}:7474"
+      - "${NEO4J_BOLT_PORT:-7687}:7687"
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+    networks:
+      - infra-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 3G
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ----------------------------------------
+  # Ollama 本地大模型服务
+  # ----------------------------------------
+  ollama:
+    container_name: infra-ollama
+    image: ollama/ollama:latest
+    platform: linux/arm64
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - infra-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '6'
+          memory: 16G
+    healthcheck:
+      test: ["CMD-SHELL", "test -S /run/ollama/ollama.sock || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ----------------------------------------
+  # PaddleOCR 服务 (可选)
+  # ----------------------------------------
+  # paddleocr:
+  #   container_name: infra-paddleocr
+  #   image: paddlepaddle/paddleocr:latest
+  #   platform: linux/arm64
+  #   ports:
+  #     - "8866:8866"
+  #   networks:
+  #     - infra-network
+  #   restart: always
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '4'
+  #         memory: 8G
+
+volumes:
+  redis-data:
+  postgres-data:
+  etcd-data:
+  minio-data:
+  milvus-data:
+  neo4j-data:
+  neo4j-logs:
+  ollama-data:
+
+networks:
+  infra-network:
+    driver: bridge

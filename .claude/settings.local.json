@@ -14,7 +14,22 @@
       "Bash(cat:*)",
       "Bash(./start-service.sh:*)",
       "Read(//Users/fanyong/Desktop/data/sql_data/**)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(/bin/rm /Users/fanyong/Desktop/code/python/docker_server/docker-compose-kb.yml /Users/fanyong/Desktop/code/python/docker_server/.env.kb)",
+      "Bash(docker stop *)",
+      "Bash(docker rm *)",
+      "Bash(docker compose *)",
+      "Bash(python3 -m json.tool)",
+      "Bash(awk '/^  [a-zA-Z_-]+:/,/^  [a-zA-Z_-]+_data:/' /Users/fanyong/Desktop/code/python/docker_server/langfuse/docker-compose.yml)",
+      "Bash(docker network *)",
+      "Bash(docker volume *)",
+      "Bash(docker image *)",
+      "Bash(grep -vE \":\\(7\\\\.2|7\\\\.2-alpine|17|pg16|v2\\\\.6\\\\.1|v3\\\\.5\\\\.18|latest\\)$\")",
+      "Bash(docker rmi *)",
+      "Bash(docker system *)",
+      "Bash(docker run *)"
     ],
     "deny": [],
     "ask": []
