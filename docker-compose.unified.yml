@@ -166,7 +166,7 @@ services:
       resources:
         limits:
           cpus: '2'
-          memory: 4G
+          memory: 8G
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
       interval: 30s
@@ -237,7 +237,7 @@ services:
           cpus: '6'
           memory: 16G
     healthcheck:
-      test: ["CMD-SHELL", "test -S /run/ollama/ollama.sock || exit 1"]
+      test: ["CMD", "ollama", "list"]
       interval: 30s
       timeout: 10s
       retries: 3
