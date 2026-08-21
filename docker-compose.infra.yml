@@ -227,11 +227,28 @@ services:
           cpus: '6'
           memory: 16G
     healthcheck:
-      test: ["CMD-SHELL", "test -S /run/ollama/ollama.sock || exit 1"]
+      test: ["CMD", "ollama", "list"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
+
+  # ----------------------------------------
+  # Attu Milvus GUI 管理工具
+  # ----------------------------------------
+  attu:
+    container_name: infra-attu
+    image: zilliz/attu:${ATTU_VERSION:-v2.5}
+    platform: linux/arm64
+    environment:
+      MILVUS_URL: milvus:19530
+    ports:
+      - "${ATTU_PORT:-8001}:3000"
+    networks:
+      - infra-network
+    depends_on:
+      - milvus
+    restart: unless-stopped
 
   # ----------------------------------------
   # PaddleOCR 服务 (可选)
