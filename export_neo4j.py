@@ -5,10 +5,21 @@ import json
 import os
 from datetime import datetime
 
-# 远程Neo4j配置
-REMOTE_URI = "bolt://47.95.23.22:7687"
-REMOTE_USER = "neo4j"
-REMOTE_PASSWORD = "12345678"
+NEO4J_HOST = os.environ.get("NEO4J_HOST", "localhost")
+NEO4J_PORT = os.environ.get("NEO4J_PORT", "7687")
+NEO4J_USER = os.environ.get("NEO4J_USER", "neo4j")
+
+def _load_password():
+    env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    if os.path.exists(env_file):
+        with open(env_file) as f:
+            for line in f:
+                if line.startswith("NEO4J_PASSWORD="):
+                    return line.strip().split("=", 1)[1]
+    return os.environ.get("NEO4J_PASSWORD", "")
+
+NEO4J_PASSWORD = _load_password()
+NEO4J_URI = f"bolt://{NEO4J_HOST}:{NEO4J_PORT}"
 
 # 导出配置
 BATCH_SIZE = 1000
@@ -100,8 +111,8 @@ def main():
     nodes_file = os.path.join(OUTPUT_DIR, f"nodes_{timestamp}.jsonl")
     rels_file = os.path.join(OUTPUT_DIR, f"relationships_{timestamp}.jsonl")
 
-    print("开始导出远程Neo4j数据...")
-    exporter = Neo4jExporter(REMOTE_URI, REMOTE_USER, REMOTE_PASSWORD)
+    print(f"开始导出Neo4j数据 ({NEO4J_URI})...")
+    exporter = Neo4jExporter(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
 
     try:
         print("\n导出节点...")
