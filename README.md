@@ -300,3 +300,42 @@ docker_server/
 ```
 
 docker compose --env-file .env.kb -f docker-compose-kb.yml up -d
+
+## 数据库备份与恢复（2026-08-21）
+
+### 备份方案
+对所有 8 个 infra 容器的持久化 volume 做物理打包（停 milvus+neo4j 后打包，保证一致性；redis/postgres 在线备份/导出）：
+
+| 容器 | 持久化 | 备份方式 | 原大小 | 压缩后 |
+|------|--------|----------|--------|--------|
+| infra-minio | `infra_minio-data` | tar.gz | 116G | 2.5G |
+| infra-etcd | `infra_etcd-data` | tar.gz | 129M | 4.8M |
+| infra-neo4j | `infra_neo4j-data` | tar.gz | 3.0G | 475M |
+| infra-postgres | `infra_postgres-data` | `pg_dumpall` + gzip | 655M | 70M |
+| infra-redis | `infra_redis-data` | — | 480K | 跳过（空库 DBSIZE=0） |
+| infra-ollama | `infra_ollama-data` | — | 12.7G | 跳过（模型可 `ollama pull` 重建） |
+| infra-milvus 自身 | `infra_milvus-data` | — | 20K | 跳过（standalone 模式不存数据） |
+| infra-neo4j-logs | `infra_neo4j-logs` | — | 3.8M | 跳过（日志可重建） |
+
+### 备份产物
+`数据库数据备份/20260821_volume_backup/`
+- `milvus_minio_data.tar.gz` (2.5G)
+- `milvus_etcd_data.tar.gz` (4.8M)
+- `neo4j_data.tar.gz` (475M)
+- `postgres_all_databases.sql.gz` (70M，含 xaga_aibl 案件库等 6 个数据库)
+
+### 数据校验（备份前后一致）
+- milvus: 28 collections / 1,363,279 rows
+- neo4j: 1,912,246 nodes / 899,759 rels
+- postgres: 6 库全 dump（实际有数据：xaga_aibl 12+ 表；personal_ai_db/my_assistant_db/langfuse_db 当前空表）
+
+### 恢复方法
+```bash
+bash /Users/fanyong/Desktop/code/python/docker_server/restore_volumes.sh
+```
+脚本自动：停 milvus+neo4j → 解压 4 个备份到对应 volume → `gunzip | psql` 恢复 postgres → 启 etcd→minio→milvus+neo4j。
+
+### 关键脚本
+- `export_milvus.py`：pymilvus 逐 collection JSONL 导出（注意：本次因业务 collection 缺索引走不通，仅 `chat_memory`/`ai_learning_docs` 可导出；常规数据用 volume 打包）
+- `export_neo4j.py`：Bolt driver 节点+关系 JSONL 导出
+- `restore_volumes.sh`：一键恢复（停服务→解包→启服务）
