@@ -201,12 +201,18 @@ connections.connect(host='localhost', port='20530')
 
 ### 导出 Neo4j 数据
 ```bash
-python export_neo4j.py
+python personal_ai/scripts/export_neo4j.py
 ```
 
 ### 导入 Neo4j 数据
 ```bash
-python import_neo4j.py
+python personal_ai/scripts/import_neo4j.py nodes_xxx.jsonl relationships_xxx.jsonl
+```
+
+### Milvus collection 备份/恢复
+```bash
+python my_assistant/scripts/backup_restore/export_milvus.py
+python my_assistant/scripts/backup_restore/restore_milvus.py --backup-dir <dir>
 ```
 
 ### 备份 PostgreSQL
@@ -217,6 +223,11 @@ docker exec kb-postgres pg_dump -U kb_user knowledge_base > backup.sql
 ### 恢复 PostgreSQL
 ```bash
 docker exec -i kb-postgres psql -U kb_user knowledge_base < backup.sql
+```
+
+### 一键恢复物理 volume（统一基础设施）
+```bash
+bash scripts/infra/restore_volumes.sh
 ```
 
 ## 资源限制
@@ -281,22 +292,41 @@ docker-compose -f docker-compose-kb.yml down -v
 
 ```
 docker_server/
-├── docker-compose.yml          # 完整服务配置
-├── docker-compose-kb.yml       # 知识库服务配置
-├── .env                        # 完整服务环境变量
-├── .env.kb                     # 知识库服务环境变量
-├── redis.conf                  # Redis 配置
-├── export_neo4j.py            # Neo4j 导出脚本
-├── import_neo4j.py            # Neo4j 导入脚本
-├── app/
-│   └── app.py                 # Flask 示例应用
-└── volumes/                   # 数据持久化目录
-    ├── kb-etcd/
-    ├── kb-minio/
-    ├── kb-milvus/
-    ├── etcd/
-    ├── minio/
-    └── milvus/
+├── docker-compose.yml              # 主入口：调起统一基础设施 + FastAPI
+├── docker-compose.infra.yml        # 完整服务配置（含 ollama / neo4j）
+├── docker-compose.unified.yml      # 统一基础设施（name: infra，多项目共享）
+├── .env / .env.example / .env.infra.example
+├── scripts/
+│   └── infra/                      # 通用基础设施编排脚本
+│       ├── restore_volumes.sh
+│       ├── migrate-to-unified.sh
+│       ├── migrate-check.sh
+│       └── docker.sh
+├── my_assistant/                   # my_assistant 项目专用
+│   ├── docker-compose.yml / data.yml / milvus.yml
+│   ├── Dockerfile / env.example
+│   └── scripts/backup_restore/     # Milvus 备份恢复
+│       ├── export_milvus.py
+│       └── restore_milvus.py
+├── personal_ai/                    # personal_ai 项目部署
+│   ├── deploy-nginx.sh / deploy-pm2.sh
+│   ├── nginx.conf / redis.conf / ecosystem.config.js
+│   ├── Dockerfile / init.sql
+│   └── scripts/                    # Neo4j 备份恢复
+│       ├── export_neo4j.py
+│       ├── import_neo4j.py
+│       ├── restore_neo4j.sh
+│       └── neo4j_export/           # 导出产物（gitignored）
+├── deploy/                      # 旧部署脚本 + 中间件 compose
+├── docker-compose/             # 早期模块化 compose 拆分（mysql/redis/neo4j/...）
+├── milvus/                     # Milvus standalone 配置
+├── nginx/                      # 自签证书 + nginx.conf
+├── neo4j_export/               # 兼容保留（gitignored，体积大）
+├── volumes/                    # 数据持久化目录
+├── backup/                     # 旧备份目录
+├── 数据库数据备份/              # 当前物理备份归档
+├── config/ configs/ app/ docs/ # 历史遗留
+└── langfuse/                   # submodule
 ```
 
 docker compose --env-file .env.kb -f docker-compose-kb.yml up -d
@@ -331,11 +361,11 @@ docker compose --env-file .env.kb -f docker-compose-kb.yml up -d
 
 ### 恢复方法
 ```bash
-bash /Users/fanyong/Desktop/code/python/docker_server/restore_volumes.sh
+bash /Users/fanyong/Desktop/code/python/docker_server/scripts/infra/restore_volumes.sh
 ```
 脚本自动：停 milvus+neo4j → 解压 4 个备份到对应 volume → `gunzip | psql` 恢复 postgres → 启 etcd→minio→milvus+neo4j。
 
 ### 关键脚本
-- `export_milvus.py`：pymilvus 逐 collection JSONL 导出（注意：本次因业务 collection 缺索引走不通，仅 `chat_memory`/`ai_learning_docs` 可导出；常规数据用 volume 打包）
-- `export_neo4j.py`：Bolt driver 节点+关系 JSONL 导出
-- `restore_volumes.sh`：一键恢复（停服务→解包→启服务）
+- `my_assistant/scripts/backup_restore/export_milvus.py`：pymilvus 逐 collection JSONL 导出（注意：本次因业务 collection 缺索引走不通，仅 `chat_memory`/`ai_learning_docs` 可导出；常规数据用 volume 打包）
+- `personal_ai/scripts/export_neo4j.py`：Bolt driver 节点+关系 JSONL 导出
+- `scripts/infra/restore_volumes.sh`：一键恢复（停服务→解包→启服务）
