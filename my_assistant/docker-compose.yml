@@ -1,0 +1,79 @@
+
+# ============================================
+# 全栈 stack(数据服务 + FastAPI 应用)
+# 启动命令:docker compose up -d
+# 依赖:先启动数据服务 docker compose -f docker-compose.data.yml up -d
+# ============================================
+
+services:
+  assistant:
+    build:
+      context: ../../../deve/drass/my_assistant(3)/my_assistant
+      dockerfile: Dockerfile
+    container_name: my-assistant
+    image: my-assistant:latest
+    pull_policy: build
+    platform: linux/arm64
+
+    ports:
+      - "8000:8000"
+
+    env_file:
+      - ../../../deve/drass/my_assistant(3)/my_assistant/configs/.env
+
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - PRELOAD_LOCAL_MODEL=false
+      - ENABLE_PERSISTENCE=true
+      - CHECKPOINT_TYPE=sqlite
+      - CHECKPOINT_DB_PATH=/app/data/checkpoints.db
+      - ENABLE_MEMORY=true
+      # 数据服务连接(指向同 stack 中的服务名)
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=neo4j123
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=redis123
+      - PG_HOST=postgres
+      - PG_PORT=5432
+      - PG_USER=postgres
+      - PG_PASSWORD=postgres123
+      - MILVUS_HOST=milvus
+      - MILVUS_PORT=19530
+
+    volumes:
+      - ../../../deve/drass/my_assistant(3)/my_assistant/data:/app/data
+      - ../../../deve/drass/my_assistant(3)/my_assistant/logs:/app/logs
+      - ../../../deve/drass/my_assistant(3)/my_assistant/cache:/app/cache
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+
+    restart: unless-stopped
+
+    networks:
+      - assistant-network
+
+    # 数据服务在另一个 compose 文件中启动,这里只声明依赖名
+
+networks:
+  assistant-network:
+    driver: bridge
+    external: true
