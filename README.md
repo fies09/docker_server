@@ -317,16 +317,15 @@ docker_server/
 │       ├── import_neo4j.py
 │       ├── restore_neo4j.sh
 │       └── neo4j_export/           # 导出产物（gitignored）
-├── deploy/                      # 旧部署脚本 + 中间件 compose
-├── docker-compose/             # 早期模块化 compose 拆分（mysql/redis/neo4j/...）
-├── milvus/                     # Milvus standalone 配置
-├── nginx/                      # 自签证书 + nginx.conf
-├── neo4j_export/               # 兼容保留（gitignored，体积大）
-├── volumes/                    # 数据持久化目录
-├── backup/                     # 旧备份目录
+├── redis.conf                   # Redis 配置（被 docker-compose.yml 引用）
+├── milvus/                      # Milvus standalone 配置
+├── nginx/                       # 自签证书 + nginx.conf
+├── neo4j_export/                # 兼容保留（gitignored，体积大）
+├── volumes/                     # 数据持久化目录
+├── backup/                      # 旧备份目录
 ├── 数据库数据备份/              # 当前物理备份归档
-├── config/ configs/ app/ docs/ # 历史遗留
-└── langfuse/                   # submodule
+├── docs/                        # 归档分析文档（CONTAINER_ANALYSIS / INFRA_README / SERVICE_CONFIG / MODEL_OPTIMIZATION）
+└── langfuse/                    # submodule（https://github.com/langfuse/langfuse.git）
 ```
 
 docker compose --env-file .env.kb -f docker-compose-kb.yml up -d

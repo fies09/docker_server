@@ -58,7 +58,18 @@
       "Bash(bash -n scripts/infra/migrate-to-unified.sh)",
       "Bash(bash -n scripts/infra/migrate-check.sh)",
       "Bash(bash -n scripts/infra/docker.sh)",
-      "Bash(bash -n personal_ai/scripts/restore_neo4j.sh)"
+      "Bash(bash -n personal_ai/scripts/restore_neo4j.sh)",
+      "Bash(grep -v \"^d.*\\\\.\\\\.\\\\?$\")",
+      "Bash(awk '{print $NF}')",
+      "Bash(grep -v \"^\\\\.$\\\\|^\\\\.\\\\.$\\\\|^.git$\\\\|^__pycache__$\")",
+      "Bash(git config *)",
+      "Bash(git submodule *)",
+      "Bash(git -C langfuse remote -v)",
+      "Bash(git ls-tree *)",
+      "Bash(cat /Users/fanyong/Desktop/code/python/docker_server/deploy/redis/redis.conf)",
+      "Read(//tmp/**)",
+      "Bash(git rm *)",
+      "Bash(git mv *)"
     ],
     "deny": [],
     "ask": []
