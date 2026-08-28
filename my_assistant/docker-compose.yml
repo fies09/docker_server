@@ -8,7 +8,7 @@
 services:
   assistant:
     build:
-      context: ../../../deve/drass/my_assistant(3)/my_assistant
+      context: ../../../deve/drass/my_assistant
       dockerfile: Dockerfile
     container_name: my-assistant
     image: my-assistant:latest
@@ -19,7 +19,7 @@ services:
       - "8000:8000"
 
     env_file:
-      - ../../../deve/drass/my_assistant(3)/my_assistant/configs/.env
+      - ../../../deve/drass/my_assistant/configs/.env
 
     environment:
       - HOST=0.0.0.0
@@ -46,9 +46,9 @@ services:
       - MILVUS_PORT=19530
 
     volumes:
-      - ../../../deve/drass/my_assistant(3)/my_assistant/data:/app/data
-      - ../../../deve/drass/my_assistant(3)/my_assistant/logs:/app/logs
-      - ../../../deve/drass/my_assistant(3)/my_assistant/cache:/app/cache
+      - ../../../deve/drass/my_assistant/data:/app/data
+      - ../../../deve/drass/my_assistant/logs:/app/logs
+      - ../../../deve/drass/my_assistant/cache:/app/cache
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
