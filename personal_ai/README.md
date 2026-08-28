@@ -11,13 +11,27 @@ personal_ai/
 ├── ecosystem.config.js             # PM2 配置
 ├── nginx.conf                      # Nginx 站点配置
 ├── redis.conf                      # Redis 自定义配置
-├── Dockerfile                      # 应用镜像
+├── Dockerfile                      # 应用镜像（pgvector 初始化）
 ├── init.sql                        # 初始化 SQL
+├── backend/                        # 后端 Docker 配置
+│   └── .dockerignore               # FastAPI 后端镜像忽略规则
+├── frontend/                       # 前端 Docker 配置
+│   ├── Dockerfile.apk              # RN Android APK 构建镜像
+│   └── .dockerignore               # 前端镜像忽略规则
 └── scripts/
     ├── export_neo4j.py             # Neo4j 节点+关系 JSONL 导出
     ├── import_neo4j.py             # 从 JSONL 导入 Neo4j
     ├── restore_neo4j.sh            # Neo4j volume 级恢复
     └── neo4j_export/               # 导出产物（.gitignore）
+```
+
+## 应用 Docker 配置
+
+后端构建上下文使用 `backend/.dockerignore`（从 `personal_ai/app/` 同步）。
+前端 APK 构建：
+
+```bash
+docker build -f frontend/Dockerfile.apk -t personal-ai-apk ../personal_ai/frontend
 ```
 
 ## Neo4j 备份 / 恢复

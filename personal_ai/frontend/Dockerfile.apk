@@ -1,0 +1,14 @@
+FROM reactnativecommunity/react-native-android
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+RUN npx cap sync android
+
+RUN cd android && ./gradlew assembleRelease
+
+CMD ["cp", "/app/android/app/build/outputs/apk/release/app-release-unsigned.apk", "/output/app.apk"]
