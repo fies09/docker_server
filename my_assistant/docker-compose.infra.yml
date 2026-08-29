@@ -1,24 +1,23 @@
 # ============================================
-# 统一基础设施服务配置
-# 路径: /Users/fanyong/Desktop/code/python/docker_server/docker-compose.infra.yml
+# 统一基础设施服务配置 (my_assistant 副本)
+# 路径: /Users/fanyong/Desktop/code/python/docker_server/my_assistant/docker-compose.infra.yml
 #
-# >>> 已迁移(2026-08-29): 本文件的服务定义已完整迁移到
-#     my_assistant/docker-compose.infra.yml（保留 name: infra，
-#     infra_* 数据卷与 infra_infra-network 不变，可直接接管当前运行栈）。
-#     后续统一使用: docker compose -f my_assistant/docker-compose.infra.yml ...
-#     本文件保留作过渡占位，确认切换无误后可删除。
+# 来源: ../docker-compose.infra.yml（docker_server 顶层）
+# 用途: 把当前项目（my_assistant）相关的全部 infra-* 服务定义归口到本项目目录
+#       service 定义与父文件保持字节级一致，保留 `name: infra`，
+#       以便直接复用既有的 infra_* 数据卷与 infra_infra-network 网络。
 #
 # 涵盖项目:
-#   - personal_ai (原 kb-* 服务)
-#   - my_assistant
-#   - 其他项目共享使用
+#   - my_assistant（主）
+#   - 其他共享使用此基础设施栈的项目
 #
 # 包含服务:
 #   - Redis (缓存)
-#   - PostgreSQL + pgvector (向量数据库)
+#   - PostgreSQL + pgvector
 #   - Milvus (向量数据库) + etcd + minio
 #   - Neo4j (图数据库)
 #   - Ollama (本地大模型)
+#   - Attu (Milvus GUI)
 # ============================================
 
 name: infra
