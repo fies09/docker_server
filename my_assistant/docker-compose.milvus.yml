@@ -62,6 +62,9 @@ services:
       MINIO_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:-minioadmin}
       MQ_TYPE: woodpecker
+      # 备份中有 15 个 collection 含 5-7 个向量字段, 默认 proxy.maxVectorFieldNum=4 会拒绝创建
+      # 上限为 10, 见 milvus.yaml: maxVectorFieldNum 注释 Value range: [1, 10]
+      PROXY_MAXVECTORFIELDNUM: ${PROXY_MAXVECTORFIELDNUM:-10}
     volumes:
       - milvus-data:/var/lib/milvus
     healthcheck:

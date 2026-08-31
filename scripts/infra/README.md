@@ -7,9 +7,9 @@
 | 脚本 | 用途 |
 |------|------|
 | `restore_volumes.sh` | 一键恢复 milvus/neo4j/postgres 物理 volume（停服务→解包→启服务） |
-| `migrate-to-unified.sh` | 将 personal_ai / my_assistant 旧服务迁移到统一 infra stack |
-| `migrate-check.sh` | 迁移前环境校验 |
-| `docker.sh` | docker compose 常用命令封装 |
+| `migrate-to-unified.sh` | 将 personal_ai / my_assistant 旧服务迁移到统一 infra stack（迁移已完成，仅作参考） |
+| `migrate-check.sh` | 迁移前环境校验（迁移已完成，仅作参考） |
+| `docker.sh` | docker compose 常用命令封装（指向 `infra/docker-compose.yml`） |
 
 ## restore_volumes.sh 用法
 
@@ -27,5 +27,5 @@ bash scripts/infra/restore_volumes.sh /path/to/backup_dir
 
 ## 依赖
 
-- `docker compose -f docker-compose.unified.yml` 必须能正常运行
+- compose 文件: `infra/docker-compose.yml`（name: infra）
 - 备份目录需包含 `neo4j_data.tar.gz` / `milvus_etcd_data.tar.gz` / `milvus_minio_data.tar.gz` / `postgres_all_databases.sql.gz`

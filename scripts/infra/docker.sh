@@ -30,34 +30,31 @@ show_help() {
 case "${1:-}" in
     up)
         echo "启动统一基础设施服务..."
-        docker-compose -f docker-compose.unified.yml up -d
+        docker compose --env-file "$SCRIPT_DIR/../../infra/.env" -f "$SCRIPT_DIR/../../infra/docker-compose.yml" up -d
         echo ""
-        echo "服务状态:"
-        docker-compose -f docker-compose.unified.yml ps
+        docker compose --env-file "$SCRIPT_DIR/../../infra/.env" -f "$SCRIPT_DIR/../../infra/docker-compose.yml" ps
         ;;
     down)
-        echo "停止所有服务..."
-        docker-compose -f docker-compose.unified.yml down
+        docker compose --env-file "$SCRIPT_DIR/../../infra/.env" -f "$SCRIPT_DIR/../../infra/docker-compose.yml" down
         ;;
     ps)
-        docker-compose -f docker-compose.unified.yml ps
+        docker compose --env-file "$SCRIPT_DIR/../../infra/.env" -f "$SCRIPT_DIR/../../infra/docker-compose.yml" ps
         ;;
     logs)
         if [ -n "$2" ]; then
-            docker-compose -f docker-compose.unified.yml logs -f "$2"
+            docker compose --env-file "$SCRIPT_DIR/../../infra/.env" -f "$SCRIPT_DIR/../../infra/docker-compose.yml" logs -f "$2"
         else
-            docker-compose -f docker-compose.unified.yml logs -f
+            docker compose --env-file "$SCRIPT_DIR/../../infra/.env" -f "$SCRIPT_DIR/../../infra/docker-compose.yml" logs -f
         fi
         ;;
     restart)
-        echo "重启所有服务..."
-        docker-compose -f docker-compose.unified.yml restart
+        docker compose --env-file "$SCRIPT_DIR/../../infra/.env" -f "$SCRIPT_DIR/../../infra/docker-compose.yml" restart "$@"
         ;;
     clean)
-        echo "⚠️  警告: 这将删除所有数据!"
+        echo "⚠️  警告: 这将删除所有数据卷!"
         read -p "确认删除? [y/N] " confirm
         if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
-            docker-compose -f docker-compose.unified.yml down -v
+            docker compose --env-file "$SCRIPT_DIR/../../infra/.env" -f "$SCRIPT_DIR/../../infra/docker-compose.yml" down -v
             echo "数据已清理"
         else
             echo "已取消"

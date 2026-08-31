@@ -69,7 +69,9 @@
       "Bash(cat /Users/fanyong/Desktop/code/python/docker_server/deploy/redis/redis.conf)",
       "Read(//tmp/**)",
       "Bash(git rm *)",
-      "Bash(git mv *)"
+      "Bash(git mv *)",
+      "Bash(grep -v \"^\\\\\\(langfuse\\\\|\\\\.git\\\\|__pycache__\\\\\\)$\")",
+      "Bash(grep -E \"^\\(config|configs\\)$\")"
     ],
     "deny": [],
     "ask": []

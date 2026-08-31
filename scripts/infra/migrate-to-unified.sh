@@ -105,7 +105,7 @@ if [ ! -f ".env" ]; then
 fi
 
 # 启动服务
-docker-compose -f docker-compose.unified.yml up -d
+docker compose --env-file "$DOCKER_SERVER_DIR/infra/.env" -f "$DOCKER_SERVER_DIR/infra/docker-compose.yml" up -d
 
 echo ""
 echo "=========================================="
@@ -113,7 +113,7 @@ echo "统一基础设施启动完成!"
 echo "=========================================="
 echo ""
 echo "服务状态:"
-docker-compose -f docker-compose.unified.yml ps
+docker compose --env-file "$DOCKER_SERVER_DIR/infra/.env" -f "$DOCKER_SERVER_DIR/infra/docker-compose.yml" ps
 echo ""
 echo "项目配置指南:"
 echo "------------------------------------------"

@@ -104,4 +104,4 @@ docker compose up -d assistant
 
 ## 与父目录 docker_server 的关系
 
-本目录已自包含全部数据服务配置。父目录 `/Users/fanyong/Desktop/code/python/docker_server/` 下的 `docker-compose.infra.yml`、`docker-compose.yml` 仍可继续供 personal_ai 等其他项目共用，但 my_assistant 项目优先使用本目录自包含的栈。
+本目录已自包含全部数据服务配置。父目录 `docker_server/infra/docker-compose.yml`（name: infra）仍可继续供 personal_ai 等其他项目共用，但 my_assistant 项目优先使用本目录自包含的栈。

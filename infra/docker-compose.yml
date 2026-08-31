@@ -1,32 +1,31 @@
 # ============================================
-# 统一基础设施服务配置
-# 路径: /Users/fanyong/Desktop/code/python/docker_server/docker-compose.infra.yml
-#
-# >>> 已迁移(2026-08-29): 本文件的服务定义已完整迁移到
-#     my_assistant/docker-compose.infra.yml（保留 name: infra，
-#     infra_* 数据卷与 infra_infra-network 不变，可直接接管当前运行栈）。
-#     后续统一使用: docker compose -f my_assistant/docker-compose.infra.yml ...
-#     本文件保留作过渡占位，确认切换无误后可删除。
+# 统一基础设施服务 - 多项目共享
+# 路径: /Users/fanyong/Desktop/code/python/docker_server/infra/docker-compose.yml
 #
 # 涵盖项目:
-#   - personal_ai (原 kb-* 服务)
+#   - personal_ai
 #   - my_assistant
 #   - 其他项目共享使用
 #
-# 包含服务:
-#   - Redis (缓存)
-#   - PostgreSQL + pgvector (向量数据库)
-#   - Milvus (向量数据库) + etcd + minio
-#   - Neo4j (图数据库)
-#   - Ollama (本地大模型)
+# 数据隔离策略:
+#   - PostgreSQL: 多数据库 (personal_ai_db, my_assistant_db)
+#   - Redis: key前缀隔离 (pa:*, ma:*)
+#   - Milvus: collection前缀隔离
+#   - Neo4j: 共享实例 (标签区分)
+#
+# 端口映射 (统一标准端口):
+#   - Redis: 6379
+#   - PostgreSQL: 5432
+#   - Neo4j HTTP: 7474, Bolt: 7687
+#   - Milvus: 19530
+#   - Minio API: 9000, Console: 9001
+#   - Ollama: 11434
+#   - Attu: 8001
 # ============================================
 
 name: infra
 
 services:
-  # ----------------------------------------
-  # Redis 缓存服务
-  # ----------------------------------------
   redis:
     image: redis:7.2-alpine
     platform: linux/arm64
@@ -53,9 +52,6 @@ services:
       retries: 3
       start_period: 30s
 
-  # ----------------------------------------
-  # PostgreSQL + pgvector
-  # ----------------------------------------
   postgres:
     image: pgvector/pgvector:pg16
     platform: linux/arm64
@@ -68,6 +64,7 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ../scripts/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
     networks:
       - infra-network
     restart: always
@@ -83,9 +80,6 @@ services:
       retries: 3
       start_period: 30s
 
-  # ----------------------------------------
-  # Milvus 依赖: etcd
-  # ----------------------------------------
   etcd:
     container_name: infra-etcd
     image: quay.io/coreos/etcd:${ETCD_VERSION:-v3.5.18}
@@ -111,9 +105,6 @@ services:
       timeout: 20s
       retries: 3
 
-  # ----------------------------------------
-  # Milvus 依赖: minio
-  # ----------------------------------------
   minio:
     container_name: infra-minio
     image: minio/minio:${MINIO_VERSION:-RELEASE.2024-12-18T13-15-44Z}
@@ -140,9 +131,6 @@ services:
       timeout: 20s
       retries: 3
 
-  # ----------------------------------------
-  # Milvus 向量数据库
-  # ----------------------------------------
   milvus:
     container_name: infra-milvus
     image: milvusdb/milvus:${MILVUS_VERSION:-v2.6.1}
@@ -162,7 +150,7 @@ services:
       resources:
         limits:
           cpus: '4'
-          memory: 6G
+          memory: 8G
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
       interval: 30s
@@ -178,9 +166,6 @@ services:
       - etcd
       - minio
 
-  # ----------------------------------------
-  # Neo4j 图数据库
-  # ----------------------------------------
   neo4j:
     container_name: infra-neo4j
     image: neo4j:${NEO4J_VERSION:-5.26.0}
@@ -213,9 +198,6 @@ services:
       retries: 3
       start_period: 40s
 
-  # ----------------------------------------
-  # Ollama 本地大模型服务
-  # ----------------------------------------
   ollama:
     container_name: infra-ollama
     image: ollama/ollama:latest
@@ -239,9 +221,6 @@ services:
       retries: 3
       start_period: 60s
 
-  # ----------------------------------------
-  # Attu Milvus GUI 管理工具
-  # ----------------------------------------
   attu:
     container_name: infra-attu
     image: zilliz/attu:${ATTU_VERSION:-v2.5}
@@ -255,24 +234,6 @@ services:
     depends_on:
       - milvus
     restart: unless-stopped
-
-  # ----------------------------------------
-  # PaddleOCR 服务 (可选)
-  # ----------------------------------------
-  # paddleocr:
-  #   container_name: infra-paddleocr
-  #   image: paddlepaddle/paddleocr:latest
-  #   platform: linux/arm64
-  #   ports:
-  #     - "8866:8866"
-  #   networks:
-  #     - infra-network
-  #   restart: always
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         cpus: '4'
-  #         memory: 8G
 
 volumes:
   redis-data:

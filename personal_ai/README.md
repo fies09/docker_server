@@ -51,7 +51,7 @@ bash scripts/restore_neo4j.sh
 
 ## 与根目录基础设施的关系
 
-根目录 `docker-compose.unified.yml`（name: infra）提供统一基础设施，personal_ai 通过标准端口接入：
+根目录 `infra/docker-compose.yml`（name: infra）提供统一基础设施，personal_ai 通过标准端口接入：
 
 ```bash
 POSTGRES_HOST=localhost POSTGRES_PORT=5432
@@ -62,5 +62,5 @@ NEO4J_URI=bolt://localhost:7687
 
 ## 部署方式二选一
 
-- **Docker Compose**：编辑根目录 compose 文件
+- **Docker Compose**：使用 `../infra/docker.sh`
 - **PM2 + Nginx**：`bash deploy-pm2.sh && bash deploy-nginx.sh`
