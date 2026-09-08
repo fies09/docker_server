@@ -10,17 +10,15 @@
 # 数据隔离策略:
 #   - PostgreSQL: 多数据库 (personal_ai_db, my_assistant_db)
 #   - Redis: key前缀隔离 (pa:*, ma:*)
-#   - Milvus: collection前缀隔离
 #   - Neo4j: 共享实例 (标签区分)
 #
 # 端口映射 (统一标准端口):
 #   - Redis: 6379
 #   - PostgreSQL: 5432
 #   - Neo4j HTTP: 7474, Bolt: 7687
-#   - Milvus: 19530
-#   - Minio API: 9000, Console: 9001
 #   - Ollama: 11434
-#   - Attu: 8001
+#
+# Milvus 三件套已迁移至 ../personal_ai/docker-compose.yml（personal-ai-* 容器）
 # ============================================
 
 name: infra
@@ -80,92 +78,6 @@ services:
       retries: 3
       start_period: 30s
 
-  etcd:
-    container_name: infra-etcd
-    image: quay.io/coreos/etcd:${ETCD_VERSION:-v3.5.18}
-    platform: linux/arm64
-    environment:
-      - ETCD_AUTO_COMPACTION_MODE=revision
-      - ETCD_AUTO_COMPACTION_RETENTION=1000
-      - ETCD_QUOTA_BACKEND_BYTES=4294967296
-      - ETCD_SNAPSHOT_COUNT=50000
-    volumes:
-      - etcd-data:/etcd
-    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
-    networks:
-      - infra-network
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 1G
-    healthcheck:
-      test: ["CMD", "etcdctl", "endpoint", "health"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-
-  minio:
-    container_name: infra-minio
-    image: minio/minio:${MINIO_VERSION:-RELEASE.2024-12-18T13-15-44Z}
-    platform: linux/arm64
-    environment:
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
-    ports:
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
-      - "${MINIO_API_PORT:-9000}:9000"
-    volumes:
-      - minio-data:/minio_data
-    command: minio server /minio_data --console-address ":9001"
-    networks:
-      - infra-network
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-
-  milvus:
-    container_name: infra-milvus
-    image: milvusdb/milvus:${MILVUS_VERSION:-v2.6.1}
-    platform: linux/arm64
-    command: ["milvus", "run", "standalone"]
-    security_opt:
-      - seccomp:unconfined
-    environment:
-      ETCD_ENDPOINTS: etcd:2379
-      MINIO_ADDRESS: minio:9000
-      MINIO_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:-minioadmin}
-      MQ_TYPE: woodpecker
-    volumes:
-      - milvus-data:/var/lib/milvus
-    deploy:
-      resources:
-        limits:
-          cpus: '4'
-          memory: 8G
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
-      interval: 30s
-      start_period: 90s
-      timeout: 20s
-      retries: 3
-    ports:
-      - "${MILVUS_PORT:-19530}:19530"
-      - "${MILVUS_METRICS_PORT:-9091}:9091"
-    networks:
-      - infra-network
-    depends_on:
-      - etcd
-      - minio
-
   neo4j:
     container_name: infra-neo4j
     image: neo4j:${NEO4J_VERSION:-5.26.0}
@@ -221,26 +133,9 @@ services:
       retries: 3
       start_period: 60s
 
-  attu:
-    container_name: infra-attu
-    image: zilliz/attu:${ATTU_VERSION:-v2.5}
-    platform: linux/arm64
-    environment:
-      MILVUS_URL: milvus:19530
-    ports:
-      - "${ATTU_PORT:-8001}:3000"
-    networks:
-      - infra-network
-    depends_on:
-      - milvus
-    restart: unless-stopped
-
 volumes:
   redis-data:
   postgres-data:
-  etcd-data:
-  minio-data:
-  milvus-data:
   neo4j-data:
   neo4j-logs:
   ollama-data:
