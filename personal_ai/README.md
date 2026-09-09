@@ -79,6 +79,36 @@ lsof -nP -iTCP:19530 -sTCP:LISTEN                # 验证端口
 | `personal-ai-minio Exited (0)` 但 milvus 起不来 | minio volume 权限错乱 | `docker volume rm personal-ai_minio-data` 后重建（**会丢数据**） |
 | milvus 起来后秒退 (255) | minio 健康检查未就绪 | 等 30s 后 `docker compose restart milvus` |
 
+## PM2 启动
+
+前后端通过 PM2 一键编排，无需 Docker（应用源码直跑）。
+
+| 进程名 | 端口 | 入口脚本 | 工作目录 |
+|--------|------|----------|----------|
+| `personal-ai-backend` | 8008 | `start-backend.sh` → `conda run -n personal_ai python -m uvicorn app.main:app --host 0.0.0.0 --port 8008` | `personal_ai/` |
+| `personal-ai-frontend` | 3000（prod）/ 3001（dev） | `start-frontend.sh` → `npm run start` / `npm run dev` | `personal_ai/frontend/` |
+
+```bash
+# 一键启动（自动构建前端 + startOrReload）
+bash deploy-pm2.sh start
+
+# 日常管理
+bash deploy-pm2.sh status    # pm2 status
+bash deploy-pm2.sh logs      # pm2 logs（实时）
+bash deploy-pm2.sh restart   # 重启
+bash deploy-pm2.sh stop      # 停
+bash deploy-pm2.sh delete    # 删
+
+# 日志文件（绝对路径）
+tail -f /Users/fanyong/Desktop/code/python/docker_server/personal_ai/logs/personal-ai-backend-out.log
+tail -f /Users/fanyong/Desktop/code/python/docker_server/personal_ai/logs/personal-ai-backend-error.log
+tail -f /Users/fanyong/Desktop/code/python/docker_server/personal_ai/logs/personal-ai-frontend-out.log
+tail -f /Users/fanyong/Desktop/code/python/docker_server/personal_ai/logs/personal-ai-frontend-error.log
+```
+
+配置位置：`docker_server/personal_ai/ecosystem.config.js`（两个 app：`personal-ai-backend` / `personal-ai-frontend`）。
+为何不用 `docker-compose`：见 `docs/decisions/ADR-016-pm2-orchestration.md`。
+
 ## Neo4j 备份 / 恢复
 
 ```bash

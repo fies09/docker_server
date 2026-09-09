@@ -1,7 +1,23 @@
 #!/bin/bash
 
-echo "🚀 Personal AI - PM2部署脚本"
+# Personal AI - PM2 编排脚本
+# 用法：
+#   bash deploy-pm2.sh start    # 一键启动/重载（pm2 startOrReload）
+#   bash deploy-pm2.sh status   # 查看进程状态
+#   bash deploy-pm2.sh logs     # 实时查看日志（pm2 logs）
+#   bash deploy-pm2.sh restart  # 重启所有进程
+#   bash deploy-pm2.sh stop     # 停止所有进程
+#   bash deploy-pm2.sh delete   # 删除所有进程
+
+set -e
+
+cd "$(dirname "$0")"
+
+ACTION="${1:-start}"
+
+echo "🚀 Personal AI - PM2 部署脚本"
 echo "=========================="
+echo "动作: $ACTION"
 
 # 获取本机IP地址
 LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || ifconfig | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}' || echo "127.0.0.1")
@@ -15,6 +31,47 @@ if ! command -v pm2 &> /dev/null; then
     echo "❌ PM2未安装，正在安装..."
     npm install -g pm2
 fi
+
+case "$ACTION" in
+    status)
+        echo "📊 PM2 进程状态:"
+        pm2 status
+        exit 0
+        ;;
+    logs)
+        echo "📝 PM2 实时日志 (Ctrl+C 退出):"
+        pm2 logs
+        exit 0
+        ;;
+    restart)
+        echo "🔄 重启 PM2 进程..."
+        pm2 restart ecosystem.config.js
+        pm2 status
+        exit 0
+        ;;
+    stop)
+        echo "🛑 停止 PM2 进程..."
+        pm2 stop ecosystem.config.js || true
+        pm2 status
+        exit 0
+        ;;
+    delete)
+        echo "🗑️  删除 PM2 进程..."
+        pm2 delete ecosystem.config.js || true
+        pm2 status
+        exit 0
+        ;;
+    start)
+        echo "▶️  启动 PM2 服务（startOrReload）..."
+        ;;
+    *)
+        echo "❌ 未知动作: $ACTION"
+        echo "用法: $0 {start|status|logs|restart|stop|delete}"
+        exit 1
+        ;;
+esac
+
+# --- start 子命令：原有 git pull + build + startOrReload 流程 ---
 
 # 安装Python依赖
 echo "🐍 安装Python依赖..."
@@ -46,17 +103,13 @@ else
 fi
 cd ..
 
-# 停止现有PM2进程和可能的端口冲突
-echo "🛑 停止现有PM2进程..."
-pm2 delete all 2>/dev/null || true
-
 # 检查端口占用并提示
 echo "🔍 检查端口占用情况..."
-BACKEND_PORT_PROCESS=$(lsof -ti:8000 2>/dev/null || echo "")
+BACKEND_PORT_PROCESS=$(lsof -ti:8008 2>/dev/null || echo "")
 FRONTEND_PORT_PROCESS=$(lsof -ti:3000 2>/dev/null || echo "")
 
 if [ ! -z "$BACKEND_PORT_PROCESS" ]; then
-    echo "⚠️  端口8000被占用 (PID: $BACKEND_PORT_PROCESS)"
+    echo "⚠️  端口8008被占用 (PID: $BACKEND_PORT_PROCESS)"
     echo "💡 如需停止占用进程: kill -9 $BACKEND_PORT_PROCESS"
 fi
 
@@ -65,9 +118,9 @@ if [ ! -z "$FRONTEND_PORT_PROCESS" ]; then
     echo "💡 如需停止占用进程: kill -9 $FRONTEND_PORT_PROCESS"
 fi
 
-# 启动PM2服务
-echo "▶️  启动PM2服务..."
-pm2 start ecosystem.config.js --env production
+# 启动PM2服务（startOrReload：已存在则 reload，不存在则 start）
+echo "▶️  启动PM2服务（startOrReload）..."
+pm2 startOrReload ecosystem.config.js --env production
 
 # 保存PM2配置
 echo "💾 保存PM2配置..."
@@ -82,24 +135,25 @@ echo "✅ PM2部署完成！"
 echo "================================"
 echo "📱 本地访问地址:"
 echo "  前端应用: http://localhost:3000"
-echo "  后端API: http://localhost:8000"
-echo "  API文档: http://localhost:8000/docs"
+echo "  后端API: http://localhost:8008"
+echo "  API文档: http://localhost:8008/docs"
 echo ""
 echo "🌐 局域网访问地址:"
 echo "  前端应用: http://$LOCAL_IP:3000"
-echo "  后端API: http://$LOCAL_IP:8000"
-echo "  API文档: http://$LOCAL_IP:8000/docs"
+echo "  后端API: http://$LOCAL_IP:8008"
+echo "  API文档: http://$LOCAL_IP:8008/docs"
 echo ""
 echo "🔧 配置Nginx反向代理 (可选):"
 echo "  sudo ./deploy-nginx.sh"
 echo "  配置后访问: http://$LOCAL_IP"
 echo ""
 echo "📊 PM2管理命令:"
-echo "  查看状态: pm2 status"
-echo "  查看日志: pm2 logs"
-echo "  重启服务: pm2 restart all"
-echo "  停止服务: pm2 stop all"
-echo "  删除服务: pm2 delete all"
+echo "  查看状态:    bash deploy-pm2.sh status"
+echo "  查看日志:    bash deploy-pm2.sh logs"
+echo "  重启服务:    bash deploy-pm2.sh restart"
+echo "  停止服务:    bash deploy-pm2.sh stop"
+echo "  删除服务:    bash deploy-pm2.sh delete"
+echo "  一键启动:    bash deploy-pm2.sh start"
 echo ""
 echo "📝 注意事项:"
 echo "  1. 确保已配置app/.env文件中的API密钥"
