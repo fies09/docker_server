@@ -13,10 +13,12 @@ module.exports = {
       min_uptime: '10s',
       max_memory_restart: '1G',
       env: {
-        NODE_ENV: 'production',
+        NODE_ENV: 'development',
         PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
         PYTHONPATH: '/Users/fanyong/Desktop/code/python/personal_ai',
-        ENVIRONMENT: 'production'
+        ENVIRONMENT: 'development',
+        DEBUG: 'True',
+        LOG_LEVEL: 'DEBUG'
       },
       env_development: {
         NODE_ENV: 'development',
@@ -25,6 +27,12 @@ module.exports = {
         ENVIRONMENT: 'development',
         DEBUG: 'True',
         LOG_LEVEL: 'DEBUG'
+      },
+      env_production: {
+        NODE_ENV: 'production',
+        PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
+        PYTHONPATH: '/Users/fanyong/Desktop/code/python/personal_ai',
+        ENVIRONMENT: 'production'
       },
       error_file: './logs/personal-ai-backend-error.log',
       out_file: './logs/personal-ai-backend-out.log',
@@ -43,9 +51,9 @@ module.exports = {
       min_uptime: '10s',
       max_memory_restart: '1G',
       env: {
-        NODE_ENV: 'production',
+        NODE_ENV: 'development',
         PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
-        PORT: '3000',
+        PORT: '3001',
         HOSTNAME: '0.0.0.0',
         NEXT_PUBLIC_API_URL: 'http://localhost:8008'
       },
@@ -53,6 +61,13 @@ module.exports = {
         NODE_ENV: 'development',
         PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
         PORT: '3001',
+        HOSTNAME: '0.0.0.0',
+        NEXT_PUBLIC_API_URL: 'http://localhost:8008'
+      },
+      env_production: {
+        NODE_ENV: 'production',
+        PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
+        PORT: '3000',
         HOSTNAME: '0.0.0.0',
         NEXT_PUBLIC_API_URL: 'http://localhost:8008'
       },

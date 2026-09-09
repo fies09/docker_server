@@ -3,4 +3,4 @@
 # 由 ecosystem.config.js 中的 personal-ai-backend 调用
 set -e
 cd /Users/fanyong/Desktop/code/python/personal_ai
-exec conda run -n personal_ai python -m uvicorn app.main:app --host 0.0.0.0 --port 8008
+exec conda run -n personal_ai python -m uvicorn app.main:app --host 0.0.0.0 --port 8008 --reload --reload-dir app --reload-include '*.py'
