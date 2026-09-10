@@ -6,7 +6,7 @@ set -e
 cd /Users/fanyong/Desktop/code/python/personal_ai/frontend
 
 if [ "${NODE_ENV}" = "production" ]; then
-    exec npm run start -- -p 3000
+    exec npm run start -- -p "${PORT:-3000}"
 else
     exec npm run dev
 fi

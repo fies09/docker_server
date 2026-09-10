@@ -67,7 +67,7 @@ module.exports = {
       env_production: {
         NODE_ENV: 'production',
         PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
-        PORT: '3000',
+        PORT: '3001',
         HOSTNAME: '0.0.0.0',
         NEXT_PUBLIC_API_URL: 'http://localhost:8008'
       },

@@ -86,7 +86,7 @@ lsof -nP -iTCP:19530 -sTCP:LISTEN                # 验证端口
 | 进程名 | 端口 | 入口脚本 | 工作目录 |
 |--------|------|----------|----------|
 | `personal-ai-backend` | 8008 | `start-backend.sh` → `conda run -n personal_ai python -m uvicorn app.main:app --host 0.0.0.0 --port 8008` | `personal_ai/` |
-| `personal-ai-frontend` | 3000（prod）/ 3001（dev） | `start-frontend.sh` → `npm run start` / `npm run dev` | `personal_ai/frontend/` |
+| `personal-ai-frontend` | 3001（prod）/ 3001（dev） | `start-frontend.sh` → `npm run start -- -p ${PORT:-3000}` / `npm run dev` | `personal_ai/frontend/` |
 
 ```bash
 # 一键启动（自动构建前端 + startOrReload）
@@ -108,6 +108,8 @@ tail -f /Users/fanyong/Desktop/code/python/docker_server/personal_ai/logs/person
 
 配置位置：`docker_server/personal_ai/ecosystem.config.js`（两个 app：`personal-ai-backend` / `personal-ai-frontend`）。
 为何不用 `docker-compose`：见 `docs/decisions/ADR-016-pm2-orchestration.md`。
+
+> ⚠️ 端口冲突：3000 被本机 `langfuse-langfuse-web-1` 容器占用，frontend prod 端口固定为 **3001**（`ecosystem.config.js` 中 `env_production.PORT=3001`）。如需释放 3000，先 `docker stop langfuse-langfuse-web-1`。
 
 ## Neo4j 备份 / 恢复
 
