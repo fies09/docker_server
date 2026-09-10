@@ -37,3 +37,8 @@ __pycache__/
 .vscode/
 *.swp
 
+# PM2 logs (personal_ai, infra, etc.)
+**/logs/
+personal_ai/logs/
+infra/logs/
+
