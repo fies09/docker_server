@@ -109,6 +109,11 @@ tail -f /Users/fanyong/Desktop/code/python/docker_server/personal_ai/logs/person
 配置位置：`docker_server/personal_ai/ecosystem.config.js`（两个 app：`personal-ai-backend` / `personal-ai-frontend`）。
 为何不用 `docker-compose`：见 `docs/decisions/ADR-016-pm2-orchestration.md`。
 
+### 热重载
+
+- **后端**：`personal-ai-backend` 启用了 pm2 `watch`，监听 `app/**/*.py`。源码改动后 ~3s pm2 自动 `restart`，uvicorn `--reload` 会同步感知；忽略 `__pycache__` / `.pyc` / ruff_cache 防误触发。
+- **前端**：`personal-ai-frontend` 走 `npm run dev`，Next.js Fast Refresh 自带 HMR；改文件浏览器 1-2s 内自动热更新，无需 pm2 watch 介入。
+
 > ⚠️ 端口冲突：3000 被本机 `langfuse-langfuse-web-1` 容器占用，frontend prod 端口固定为 **3001**（`ecosystem.config.js` 中 `env_production.PORT=3001`）。如需释放 3000，先 `docker stop langfuse-langfuse-web-1`。
 
 ## Neo4j 备份 / 恢复
