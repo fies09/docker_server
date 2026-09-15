@@ -74,7 +74,7 @@ services:
       resources:
         limits:
           cpus: '4'
-          memory: 8G
+          memory: 16G
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
       interval: 30s
@@ -90,19 +90,21 @@ services:
       - etcd
       - minio
 
-  attu:
-    container_name: personal-ai-attu
-    image: zilliz/attu:${ATTU_VERSION:-v2.5}
-    platform: linux/arm64
-    environment:
-      MILVUS_URL: milvus:19530
-    ports:
-      - "${ATTU_PORT:-8001}:3000"
-    networks:
-      - personal-ai-net
-    depends_on:
-      - milvus
-    restart: unless-stopped
+  # attu: 已下线 (2026-09-15) — Milvus 三件套整体未启用，向量由 pgvector 承担
+  # 未来恢复 Milvus 时取消下方注释 + depends_on milvus
+  # attu:
+  #   container_name: personal-ai-attu
+  #   image: zilliz/attu:${ATTU_VERSION:-v2.5}
+  #   platform: linux/arm64
+  #   environment:
+  #     MILVUS_URL: milvus:19530
+  #   ports:
+  #     - "${ATTU_PORT:-8001}:3000"
+  #   networks:
+  #     - personal-ai-net
+  #   depends_on:
+  #     - milvus
+  #   restart: unless-stopped
 
 volumes:
   etcd-data:
