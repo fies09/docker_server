@@ -37,7 +37,7 @@ services:
       - redis-data:/data
     networks:
       - infra-network
-    restart: always
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -65,7 +65,7 @@ services:
       - ../scripts/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
     networks:
       - infra-network
-    restart: always
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -97,7 +97,7 @@ services:
       - neo4j-logs:/logs
     networks:
       - infra-network
-    restart: always
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -120,7 +120,7 @@ services:
       - ollama-data:/root/.ollama
     networks:
       - infra-network
-    restart: always
+    restart: unless-stopped
     deploy:
       resources:
         limits:
