@@ -28,4 +28,13 @@ else
   echo "✅ langfuse 运行中"
 fi
 
+# 按需拉起 Milvus 三件套（独立 docker_server/milvus/ 编排，不走 infra 栈）
+MILVUS_DIR="/Users/fanyong/Desktop/code/python/docker_server/milvus"
+if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -qFx "milvus-standalone"; then
+  echo "▶️  检测到 milvus-standalone 未运行，自动启动..."
+  (cd "$MILVUS_DIR" && docker compose up -d) || echo "⚠️  milvus 拉起失败，向量召回将走 pgvector 兜底"
+else
+  echo "✅ milvus-standalone 运行中"
+fi
+
 exec /Users/fanyong/miniforge3/envs/personal_ai/bin/python -u -m uvicorn app.main:app --host 0.0.0.0 --port 8008 --reload --reload-dir app --reload-include '*.py'
