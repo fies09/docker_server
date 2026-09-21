@@ -35,9 +35,9 @@ case "${1:-}" in
         docker compose --env-file "$SCRIPT_DIR/.env" -f "$SCRIPT_DIR/docker-compose.yml" ps
         ;;
     up-milvus)
-        echo "启动 Milvus 三件套..."
-        docker compose --env-file "$SCRIPT_DIR/.env" -f "$SCRIPT_DIR/docker-compose.yml" up -d etcd minio milvus
-        docker compose --env-file "$SCRIPT_DIR/.env" -f "$SCRIPT_DIR/docker-compose.yml" ps etcd minio milvus
+        echo "启动 Milvus 三件套 (独立编排: ../milvus/docker-compose.yml)..."
+        docker compose -f "$SCRIPT_DIR/../milvus/docker-compose.yml" up -d
+        docker compose -f "$SCRIPT_DIR/../milvus/docker-compose.yml" ps
         ;;
     down)
         docker compose --env-file "$SCRIPT_DIR/.env" -f "$SCRIPT_DIR/docker-compose.yml" down
