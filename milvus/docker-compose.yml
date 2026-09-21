@@ -63,6 +63,21 @@ services:
       minio:
         condition: service_healthy
 
+  # Attu: Milvus 官方 Web UI (只读 + 集合管理)
+  # 访问: http://localhost:30000  — Milvus Address 填 host.docker.internal:19530
+  attu:
+    container_name: milvus-attu
+    image: zilliz/attu:v2.5
+    restart: unless-stopped
+    ports:
+      - "30000:3000"
+    environment:
+      # 直连宿主机上的 milvus-standalone
+      MILVUS_URL: milvus-standalone:19530
+    depends_on:
+      standalone:
+        condition: service_healthy
+
 networks:
   default:
     name: milvus
