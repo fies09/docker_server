@@ -17,8 +17,12 @@
 #   - PostgreSQL: 5432
 #   - Neo4j HTTP: 7474, Bolt: 7687
 #   - Ollama: 11434
+#   - Milvus gRPC: 19530, HTTP: 9091
+#   - Milvus Attu UI: 30000
 #
-# Milvus 三件套已迁移至 ../personal_ai/docker-compose.yml（personal-ai-* 容器）
+# Milvus 三件套 (etcd/minio/standalone) + Attu UI 全部纳入本栈统一管理
+# 历史: 原独立编排 ../milvus/docker-compose.yml 已合并; ../personal_ai/docker-compose.yml
+#       (personal-ai-* 旧容器) 已清理。
 # ============================================
 
 name: infra
@@ -133,12 +137,103 @@ services:
       retries: 3
       start_period: 60s
 
+  # ---- Milvus 三件套 (etcd/minio/standalone) ----
+  # 历史: 独立编排 ../milvus/docker-compose.yml 已合并到本栈,统一网络名 infra
+  milvus-etcd:
+    container_name: milvus-etcd
+    image: quay.io/coreos/etcd:v3.5.18
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      # 沿用旧独立编排数据目录（172G minio 数据在里面，不可换命名卷）
+      - ../milvus/volumes/etcd:/etcd
+    command: etcd -advertise-client-urls=http://milvus-etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    networks:
+      - infra-network
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 30s
+
+  milvus-minio:
+    container_name: milvus-minio
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    ports:
+      - "9001:9001"
+      - "9000:9000"
+    volumes:
+      # 沿用旧独立编排数据目录 (172G minio 数据 — 不可换命名卷)
+      - ../milvus/volumes/minio:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+    networks:
+      - infra-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 30s
+
+  milvus-standalone:
+    container_name: milvus-standalone
+    image: milvusdb/milvus:v2.6.1
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      ETCD_ENDPOINTS: milvus-etcd:2379
+      MINIO_ADDRESS: milvus-minio:9000
+      MQ_TYPE: woodpecker
+    volumes:
+      # 沿用旧独立编排数据目录
+      - ../milvus/volumes/milvus:/var/lib/milvus
+    networks:
+      - infra-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on:
+      milvus-etcd:
+        condition: service_healthy
+      milvus-minio:
+        condition: service_healthy
+
+  # Milvus 官方 Web UI — 访问 http://localhost:30000
+  milvus-attu:
+    container_name: milvus-attu
+    image: zilliz/attu:v2.5
+    restart: unless-stopped
+    ports:
+      - "30000:3000"
+    environment:
+      MILVUS_URL: milvus-standalone:19530
+    networks:
+      - infra-network
+    depends_on:
+      milvus-standalone:
+        condition: service_healthy
+
 volumes:
   redis-data:
   postgres-data:
   neo4j-data:
   neo4j-logs:
   ollama-data:
+  # milvus-etcd/minio/milvus 命名卷不再使用 — 全部沿用旧独立编排 ../milvus/volumes/ bind 数据目录
 
 networks:
   infra-network:

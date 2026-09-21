@@ -13,8 +13,7 @@ show_help() {
     echo "用法: ./docker.sh [命令]"
     echo ""
     echo "命令:"
-    echo "  up          启动所有服务"
-    echo "  up-milvus   仅启动 Milvus 三件套 (etcd/minio/milvus)"
+    echo "  up          启动所有服务 (postgres/redis/neo4j/ollama/milvus-etcd/minio/standalone/attu)"
     echo "  down        停止所有服务"
     echo "  ps          查看运行状态"
     echo "  logs [服务] 查看日志"
@@ -33,11 +32,6 @@ case "${1:-}" in
         docker compose --env-file "$SCRIPT_DIR/.env" -f "$SCRIPT_DIR/docker-compose.yml" up -d
         echo ""
         docker compose --env-file "$SCRIPT_DIR/.env" -f "$SCRIPT_DIR/docker-compose.yml" ps
-        ;;
-    up-milvus)
-        echo "启动 Milvus 三件套 (独立编排: ../milvus/docker-compose.yml)..."
-        docker compose -f "$SCRIPT_DIR/../milvus/docker-compose.yml" up -d
-        docker compose -f "$SCRIPT_DIR/../milvus/docker-compose.yml" ps
         ;;
     down)
         docker compose --env-file "$SCRIPT_DIR/.env" -f "$SCRIPT_DIR/docker-compose.yml" down
