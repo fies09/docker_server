@@ -6,8 +6,6 @@ docker_server 为 personal_ai 提供独立的部署脚本与 Docker 资源，应
 
 ```
 personal_ai/
-├── docker-compose.yml              # personal_ai 专属栈（Milvus 三件套 + Attu）
-├── .env                            # Milvus 三件套环境变量
 ├── deploy-nginx.sh                 # Nginx 站点部署
 ├── deploy-pm2.sh                   # PM2 进程托管部署
 ├── ecosystem.config.js             # PM2 配置
@@ -28,28 +26,29 @@ personal_ai/
 
 | 栈 | 路径 | 服务 |
 |----|------|------|
-| 共享基础设施 | `../infra/` | PG / Redis / Neo4j / Ollama / MinIO（个人 KB 库）/ Attu（KB 库） |
-| personal_ai 专属 | `./` | Milvus（chat_memory 集合） + Etcd + MinIO + Attu |
+| 共享基础设施 | `../infra/` | PG / Redis / Neo4j / Ollama / Milvus 三件套（etcd/minio/standalone）/ Attu |
 
-Milvus 三件套与 PG/Redis/Neo4j/Ollama 解耦，单独容器命名空间 `personal-ai-*`，与 infra 栈容器名 `infra-*` 隔离，可独立升级/迁移。
+personal_ai 不再持有独立 Docker 栈：Milvus 三件套已于 infra 统一编排阶段
+（`../infra/docker-compose.yml`，服务名 `milvus-*`）并入 infra 栈，与 PG/Redis/Neo4j/Ollama
+共用同一份数据目录与端口（19530 / 9091 / 9000 / 9001 / 30000）。
+
+> ⚠️ 本目录原有的 `docker-compose.yml` + `.env` 已删除。该副本与 infra 栈争抢同一批宿主
+> 端口和数据卷，`up` 必然报 `Bind for 0.0.0.0:9000 failed: port is already allocated`。
+> 需要调 Milvus 一律改 `../infra/docker-compose.yml`。
 
 ## 部署
 
 ```bash
-# 1) 共享基础设施（一次性，多项目共享）
+# 1) 共享基础设施（含 Milvus 三件套，一次性，多项目共享）
 cd ../infra && ./docker.sh up
+cd ../infra && ./docker.sh ps
 
-# 2) personal_ai 专属栈（Milvus 三件套 + Attu）
-cd .   # 当前目录即为 personal_ai/
-docker compose --env-file .env -f docker-compose.yml up -d
-docker compose -f docker-compose.yml ps
-
-# 3) 前端 APK 构建
+# 2) 前端 APK 构建
 docker build -f frontend/Dockerfile.apk \
     -t personal-ai-apk \
     /Users/fanyong/Desktop/code/python/personal_ai/frontend
 
-# 4) 进程托管（不依赖 Docker 编排）
+# 3) 进程托管（不依赖 Docker 编排）
 bash deploy-pm2.sh
 bash deploy-nginx.sh
 ```
@@ -58,26 +57,29 @@ PG 多库初始化（personal_ai_db / my_assistant_db / langfuse_db）由 `../in
 
 ## Milvus 恢复
 
-Milvus 三件套（etcd/minio/milvus）启动顺序敏感，三件之一崩溃会导致 `localhost:19530`
-连接失败。症状：后端日志出现 `Milvus 初始化失败: ...illegal connection params`，
-`docker compose ps` 中任一组件显示 `Exited`。
+Milvus 三件套（`milvus-etcd` / `milvus-minio` / `milvus-standalone`）在 infra 栈内，启动顺序敏感，
+三件之一崩溃会导致 `localhost:19530` 连接失败。症状：后端日志出现
+`Milvus 初始化失败: ...illegal connection params`，`docker.sh ps` 中任一组件显示 `Exited`。
 
 ```bash
-docker compose ps                                # 查看哪些容器 Exited
-docker compose logs milvus                       # 查看崩溃原因（OOM 137、端口占用、磁盘满）
-docker compose up -d                             # 重新拉起全部
-lsof -nP -iTCP:19530 -sTCP:LISTEN                # 验证端口
+cd ../infra
+./docker.sh ps                                # 查看哪些容器 Exited
+./docker.sh logs milvus-standalone            # 查看崩溃原因（OOM 137、etcd 连接断开、磁盘满）
+./docker.sh up                                # 重新拉起全部
+lsof -nP -iTCP:19530 -sTCP:LISTEN              # 验证端口
 ```
 
-如需仅启动三件套：`docker compose up -d etcd minio milvus`。
+如需仅启动三件套：`./docker.sh up milvus-standalone`（依赖 etcd/minio 健康检查自动满足）。
 
 常见根因：
 
 | 现象 | 根因 | 处理 |
 |------|------|------|
-| `personal-ai-etcd Exited (137)` | OOM killed，1GiB 限制偏低 | compose 中已升至 2GiB，重启即可 |
-| `personal-ai-minio Exited (0)` 但 milvus 起不来 | minio volume 权限错乱 | `docker volume rm personal-ai_minio-data` 后重建（**会丢数据**） |
-| milvus 起来后秒退 (255) | minio 健康检查未就绪 | 等 30s 后 `docker compose restart milvus` |
+| `milvus-standalone Exited (1)`，日志 `Data Node disconnected from etcd` | etcd 重启导致会话丢失 | `./docker.sh up`，etcd/minio 数据不动，仅重建会话 |
+| `milvus-standalone Exited (137)` | OOM killed | 调高 infra compose 中该服务的 `mem_limit` 后重启 |
+| `milvus-standalone Exited (1)` + `milvus-minio Exited (0)` | minio 数据目录权限错乱 | 修复 `../milvus/volumes/minio` 属主后重启（**动数据前先备份 172G 数据**） |
+| `milvus-standalone` 起来后秒退 (255) | minio 健康检查未就绪 | 等 30s 后 `./docker.sh restart milvus-standalone` |
+| `Bind for 0.0.0.0:9000 failed: port is already allocated` | 有第二份 Milvus 编排在抢端口 | 检查是否存在非 infra 的 compose 副本，已删除的 `personal_ai/docker-compose.yml` 即此类 |
 
 ## PM2 启动
 
