@@ -52,8 +52,8 @@ services:
       - POSTGRES_PASSWORD=postgres123
       - MILVUS_HOST=host.docker.internal
       - MILVUS_PORT=19530
-      # Langfuse 可观测性(同主机)
-      - LANGFUSE_HOST=http://host.docker.internal:3000
+      # Langfuse 可观测性(同主机) — 控制台经 i18n 中文代理暴露在宿主 3005
+      - LANGFUSE_HOST=http://host.docker.internal:3005
 
     extra_hosts:
       - "host.docker.internal:host-gateway"

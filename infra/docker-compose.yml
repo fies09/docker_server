@@ -20,7 +20,10 @@
 #   - Milvus gRPC: 19530, HTTP: 9091
 #   - Milvus Attu UI: 30000
 #
-# Milvus 三件套 (etcd/minio/standalone) + Attu UI 全部纳入本栈统一管理
+# 资源配额按本机实际配置标定（Apple M5 / 10 核 / 32GB，OrbStack VM 内存上限 ~15.7GiB）：
+# limits 是上限而非预留，本栈实测常驻约 3GiB；各容器互不超卖，避免单个服务吃满 VM。
+# ollama 9GiB：承载 bge-m3(1.2GB 嵌入) + qwen3.5:9b(~5.6GB 对话)，另留 KV cache 余量。
+# 本机本地对话模型只有 qwen3.5:9b（personal_ai .env 指定），无 8b 及以上模型。
 # 历史: 原独立编排 ../milvus/docker-compose.yml 已合并; ../personal_ai/docker-compose.yml
 #       (personal-ai-* 旧容器) 已清理。
 # ============================================
@@ -41,11 +44,11 @@ services:
       - redis-data:/data
     networks:
       - infra-network
-    restart: unless-stopped
+    restart: "no"
     deploy:
       resources:
         limits:
-          cpus: '2'
+          cpus: '1'
           memory: 1G
     healthcheck:
       test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD:-redis123}", "ping"]
@@ -62,6 +65,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      # init-multiple-dbs.sh 依赖此变量创建业务库（personal_ai_db / my_assistant_db）
+      POSTGRES_MULTIPLE_DATABASES: ${POSTGRES_MULTIPLE_DATABASES:-personal_ai_db,my_assistant_db}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -69,12 +74,12 @@ services:
       - ../scripts/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
     networks:
       - infra-network
-    restart: unless-stopped
+    restart: "no"
     deploy:
       resources:
         limits:
-          cpus: '4'
-          memory: 4G
+          cpus: '2'
+          memory: 2G
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 30s
@@ -101,7 +106,7 @@ services:
       - neo4j-logs:/logs
     networks:
       - infra-network
-    restart: unless-stopped
+    restart: "no"
     deploy:
       resources:
         limits:
@@ -124,12 +129,12 @@ services:
       - ollama-data:/root/.ollama
     networks:
       - infra-network
-    restart: unless-stopped
+    restart: "no"
     deploy:
       resources:
         limits:
-          cpus: '6'
-          memory: 16G
+          cpus: '4'
+          memory: 9G
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 30s
@@ -153,6 +158,11 @@ services:
     command: etcd -advertise-client-urls=http://milvus-etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     networks:
       - infra-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
     healthcheck:
       test: ["CMD", "etcdctl", "endpoint", "health"]
       interval: 30s
@@ -175,6 +185,11 @@ services:
     command: minio server /minio_data --console-address ":9001"
     networks:
       - infra-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
@@ -197,6 +212,11 @@ services:
       - ../milvus/volumes/milvus:/var/lib/milvus
     networks:
       - infra-network
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
       interval: 30s
@@ -216,13 +236,18 @@ services:
   milvus-attu:
     container_name: milvus-attu
     image: zilliz/attu:v2.5
-    restart: unless-stopped
+    restart: "no"
     ports:
       - "30000:3000"
     environment:
       MILVUS_URL: milvus-standalone:19530
     networks:
       - infra-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
     depends_on:
       milvus-standalone:
         condition: service_healthy

@@ -4,7 +4,7 @@
 > `infra/docker-compose.yml`，本目录仅保留数据卷：
 >
 > - `volumes/etcd/`   — etcd 元数据（原 standalone 依赖）
-> - `volumes/minio/`  — 对象存储 a-bucket（172G，⚠️ 不可删）
+> - `volumes/minio/`  — 对象存储 a-bucket（67G，⚠️ 不可删）
 > - `volumes/milvus/` — standalone 本地存储
 >
 > 启动命令：`cd ../infra && bash docker.sh up`（8 服务，含 milvus 三件套 + Attu）

@@ -15,10 +15,14 @@ fi
 REAL_USER=${SUDO_USER:-$USER}
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# PM2 编排（ecosystem.config.js / deploy-pm2.sh）随 personal_ai 源码仓库维护，
+# 不在本 docker_server 编排目录内。
+PM2_DIR="${PERSONAL_AI_DIR:-/Users/fanyong/Desktop/code/python/personal_ai}"
+
 echo "🚀 第一步：部署PM2服务..."
 echo "=========================="
 # 切换到实际用户运行PM2部署
-sudo -u "$REAL_USER" bash "$PROJECT_DIR/deploy-pm2.sh"
+sudo -u "$REAL_USER" bash "$PM2_DIR/deploy-pm2.sh"
 
 if [ $? -ne 0 ]; then
     echo "❌ PM2部署失败，停止脚本执行"
@@ -67,10 +71,10 @@ fi
 # 备份原有nginx配置
 echo "💾 备份原有nginx配置..."
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    # macOS
-    NGINX_CONF="/usr/local/etc/nginx/nginx.conf"
-    NGINX_SITES_DIR="/usr/local/etc/nginx/servers"
-    NGINX_PID="/usr/local/var/run/nginx.pid"
+    # macOS（Homebrew 前缀 /opt/homebrew）
+    NGINX_CONF="/opt/homebrew/etc/nginx/nginx.conf"
+    NGINX_SITES_DIR="/opt/homebrew/etc/nginx/servers"
+    NGINX_PID="/opt/homebrew/var/run/nginx.pid"
 else
     # Linux
     NGINX_CONF="/etc/nginx/nginx.conf"
@@ -96,8 +100,12 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS配置
-    cp "$PROJECT_DIR/nginx.conf" "$NGINX_SITES_DIR/personal-ai.conf"
-    
+    # 仓库 nginx.conf 用的是 Linux/容器路径（日志 /var/log/nginx、错误页 /usr/share/nginx/html），
+    # Homebrew 前缀在 /opt/homebrew，拷贝后按平台改写，避免 nginx -t 失败或日志写不进去。
+    sed -e 's#/var/log/nginx#/opt/homebrew/var/log/nginx#g' \
+        -e 's#/usr/share/nginx/html#/opt/homebrew/share/nginx/html#g' \
+        "$PROJECT_DIR/nginx.conf" > "$NGINX_SITES_DIR/personal-ai.conf"
+
     # 修改主nginx配置以包含站点配置
     cat > "$NGINX_CONF" << 'EOL'
 worker_processes auto;
@@ -182,8 +190,8 @@ if [ $? -eq 0 ]; then
     fi
     echo ""
     echo "📝 注意事项:"
-    echo "  1. 确保后端服务运行在端口8000"
-    echo "  2. 确保前端服务运行在端口3000"
+    echo "  1. 确保后端服务运行在端口8008"
+    echo "  2. 确保前端服务运行在端口3001"
     echo "  3. 如有防火墙，请开放80端口"
     
 else

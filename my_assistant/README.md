@@ -7,14 +7,15 @@ my_assistant 项目的 FastAPI 应用容器编排。**数据服务统一由父�
 ```
 my_assistant/
 ├── docker-compose.yml              # FastAPI 应用容器（连 host.docker.internal）
-├── docker-compose.data.yml         # 数据服务模板（ma-*，备用，未启动）
-├── docker-compose.milvus.yml       # Milvus 三件套独立栈（备用，未启动）
+├── .env                            # 本栈 compose 变量（如需）
 ├── docker.sh                       # 应用容器一键管理脚本 ⭐
-├── env.example                     # 凭证 + 端口模板（备用模板，无需 .env）
 ├── scripts/
 │   └── backup_restore/             # PG/Redis/Neo4j/Milvus 备份脚本
 └── README.md
 ```
+
+> 数据服务编排（`docker-compose.data.yml` / `docker-compose.milvus.yml`）与独立 `env.example` 已删除：
+> 数据服务统一由 `infra/` 栈提供，重复编排只会在端口与数据卷上互相争抢。
 
 ## 快速启动（推荐）
 
@@ -65,13 +66,13 @@ cd /Users/fanyong/Desktop/code/python/docker_server/infra
 | PostgreSQL | infra-postgres | 5432 | infra 栈 | postgres / postgres123 |
 | Redis | infra-redis | 6379 | infra 栈 | redis123 |
 | Neo4j HTTP / Bolt | infra-neo4j | 7474 / 7687 | infra 栈 | neo4j / neo4j123 |
-| Milvus | infra-milvus | 19530 | infra 栈 | — |
-| Milvus Health | infra-milvus | 9091 | infra 栈 | — |
-| MinIO API | infra-minio | 9000 | infra 栈 | minioadmin / minioadmin |
-| MinIO Console | infra-minio | 9001 | infra 栈 | minioadmin / minioadmin |
-| Attu | infra-attu | 8001 | infra 栈 | — |
+| Milvus | milvus-standalone | 19530 | infra 栈 | — |
+| Milvus Health | milvus-standalone | 9091 | infra 栈 | — |
+| MinIO API | milvus-minio | 9000 | infra 栈 | minioadmin / minioadmin |
+| MinIO Console | milvus-minio | 9001 | infra 栈 | minioadmin / minioadmin |
+| Attu | milvus-attu | 30000 | infra 栈 | — |
 | Ollama | infra-ollama | 11434 | infra 栈 | — |
-| Langfuse | langfuse-langfuse-web-1 | 3000 | langfuse 栈 | 见 langfuse/ |
+| Langfuse | personal-ai-langfuse-i18n | 3005（仅 127.0.0.1） | langfuse 栈 + i18n 代理 | 见 langfuse/ |
 | **FastAPI** | **my-assistant** | **8000** | **本栈** | — |
 
 ## 网络架构
@@ -87,21 +88,11 @@ cd /Users/fanyong/Desktop/code/python/docker_server/infra
                           (host-gateway) ←───────┬─ Mac 主机 ──┘
 ```
 
-应用容器使用 `host.docker.internal` 直连主机的 infra-* 服务端口，不参与 infra 栈内部网络。Docker Desktop Mac 自动注入 `host.docker.internal`，compose 文件额外显式声明 `extra_hosts` 作为保险。
+应用容器使用 `host.docker.internal` 直连主机的 infra-* 服务端口，不参与 infra 栈内部网络。OrbStack 会在容器内注入 `host.docker.internal`，compose 文件额外显式声明 `extra_hosts` 作为保险。
 
 ## 备用部署模式
 
-如需独立部署（不依赖 infra 栈），改用：
-
-```bash
-# 数据服务（自包含 ma-* 前缀）
-docker compose -f docker-compose.data.yml up -d
-
-# 应用容器（需修改 compose 文件内服务名指向 ma-* 容器）
-docker compose up -d assistant
-```
-
-> 该模式会造成与 infra 栈端口冲突，通常不推荐使用。`docker-compose.data.yml` 与 `docker-compose.milvus.yml` 仅作配置模板保留。
+无。数据服务只由 `infra/` 栈提供；若需独立部署请新建独立编排并使用独立端口前缀，否则会与 infra 栈端口冲突。
 
 ## 备份与恢复
 
@@ -143,16 +134,14 @@ python scripts/backup_restore/restore_milvus.py \
 
 ## 资源建议（应用容器）
 
-| 服务 | 最低 | 推荐（导入大集合） |
-|------|------|-------------------|
-| FastAPI | 2 GB | 4 GB |
-| Milvus (infra) | 8 GB | 16-24 GB（调 `MILVUS_MEMORY_LIMIT`） |
-| Neo4j (infra) | 2 GB | 4 GB |
-| PostgreSQL (infra) | 512 MB | 2 GB |
-| Redis (infra) | 256 MB | 1 GB |
+infra 栈已按本机实际配置标定配额（Apple M5 / 10 核 / 32GB，OrbStack VM 内存上限 ~15.7GiB），详见 `../infra/README.md`。本栈应用容器配额：
+
+| 服务 | cpus | memory |
+|------|------|--------|
+| FastAPI (assistant) | 2 | 4G |
 
 ## 与父目录 docker_server 的关系
 
-- 父目录 `docker_server/infra/` 提供 8 个共享数据服务（`infra-*` 前缀，name=infra），运行中
+- 父目录 `docker_server/infra/` 提供 8 个共享数据服务（`name=infra`），运行中
 - 父目录 `docker_server/langfuse/` 提供 LLM 可观测性栈（langfuse-*），运行中
 - 本目录仅编排 `my-assistant` 应用容器，连入 infra 栈（通过主机端口）
