@@ -22,7 +22,8 @@ PM2_DIR="${PERSONAL_AI_DIR:-/Users/fanyong/Desktop/code/python/personal_ai}"
 echo "🚀 第一步：部署PM2服务..."
 echo "=========================="
 # 切换到实际用户运行PM2部署
-sudo -u "$REAL_USER" bash "$PM2_DIR/deploy-pm2.sh"
+# deploy-pm2.sh 必须带 action，无参数只会打印用法并空转；此处用 start（dev 模式）
+sudo -u "$REAL_USER" bash "$PM2_DIR/deploy-pm2.sh" start
 
 if [ $? -ne 0 ]; then
     echo "❌ PM2部署失败，停止脚本执行"
